@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Spam Detector</title>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 20px;
+				background-color: #f5f5f5;
+			}
+			.container {
+				background-color: white;
+				padding: 20px;
+				border-radius: 8px;
+				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+			textarea {
+				width: 100%;
+				height: 150px;
+				margin: 10px 0;
+				padding: 10px;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+				resize: vertical;
+			}
+			button {
+				background-color: #007bff;
+				color: white;
+				border: none;
+				padding: 10px 20px;
+				border-radius: 4px;
+				cursor: pointer;
+			}
+			button:hover {
+				background-color: #0056b3;
+			}
+			#result {
+				margin-top: 20px;
+				padding: 15px;
+				border-radius: 4px;
+			}
+			.spam {
+				background-color: #ffebee;
+				border: 1px solid #ffcdd2;
+			}
+			.ham {
+				background-color: #e8f5e9;
+				border: 1px solid #c8e6c9;
+			}
+			.features {
+				margin-top: 10px;
+				font-size: 0.9em;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Spam Message Detector</h1>
+			<textarea
+				id="message"
+				placeholder="Enter your message here..."
+			></textarea>
+			<button onclick="checkSpam()">Check for Spam</button>
+			<div id="result" style="display: none"></div>
+		</div>
+
+		<script>
+			function checkSpam() {
+				const message = document.getElementById("message").value;
+				if (!message) {
+					alert("Please enter a message");
+					return;
+				}
+
+				fetch("/check_spam", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ message: message }),
+				})
+					.then((response) => response.json())
+					.then((data) => {
+						const resultDiv = document.getElementById("result");
+						resultDiv.style.display = "block";
+						resultDiv.className = data.is_spam ? "spam" : "ham";
+
+						let resultHTML = `
+                    <h3>${
+											data.is_spam
+												? "⚠️ Spam Detected!"
+												: "✅ Message appears safe"
+										}</h3>
+                    <p>Spam Probability: ${data.spam_probability}%</p>
+                `;
+
+						if (data.suspicious_features.length > 0) {
+							resultHTML += `
+                        <div class="features">
+                            <p>Suspicious features found:</p>
+                            <ul>
+                                ${data.suspicious_features
+																	.map(
+																		(feature) =>
+																			`<li>${feature.replace(/_/g, " ")}</li>`,
+																	)
+																	.join("")}
+                            </ul>
+                        </div>
+                    `;
+						}
+
+						resultDiv.innerHTML = resultHTML;
+					})
+					.catch((error) => {
+						console.error("Error:", error);
+						alert("An error occurred while checking the message");
+					});
+			}
+		</script>
+	</body>
+</html>
